@@ -2,6 +2,7 @@ import os
 import sqlite3
 import pandas as pd
 from datetime import datetime
+from tabulate import tabulate
 
 db_name = 'finance.db'
 
@@ -76,7 +77,7 @@ def account_menu():
 def function_menu(selected_account):
     print(f"-----ACCOUNT: {selected_account}-----")
     print("-----FUNCTION MENU-----")
-    response = int(input("Select a function: \n1. Add Transaction \n2. View Transactions \n3. Delete Transaction \n4. Export as CSV \n5. Back to Account Menu: ").strip())
+    response = int(input("Select a function: \n1. Add Transaction \n2. View Transactions \n3. Delete Transaction \n4. Edit Transaction \n5. Export as CSV \n6. Back to Account Menu: ").strip())
     if response == 1:
         date = input("Enter the date (YYYY-MM-DD): ").strip()
         date = datetime.strptime(date, "%Y-%m-%d").strftime("%Y-%m-%d")
@@ -98,7 +99,7 @@ def function_menu(selected_account):
         if view_choice == '1':
             df_view = df.copy()
             df_view.loc['Total'] = ['--------', '--------', df['Amount'].sum()]
-            print(df_view)
+            print(tabulate(df_view, headers='keys', tablefmt='fancy_grid', showindex=True))
         elif view_choice == '2':
             year = input("Enter the year (YYYY): ").strip()
             df_year = df[df['Date'].str.startswith(year)]
@@ -106,7 +107,7 @@ def function_menu(selected_account):
                 print(f"No transactions found for the year {year}.")
             else:
                 df_year.loc['Total'] = ['--------', '--------', df_year['Amount'].sum()]
-                print(df_year)
+                print(tabulate(df_year, headers='keys', tablefmt='fancy_grid', showindex=True))
         elif view_choice == '3':
             function_menu(selected_account)
             return
@@ -144,17 +145,59 @@ def function_menu(selected_account):
 
         function_menu(selected_account)
     elif response == 4:
+        date = input("Enter the date of the transaction to edit (YYYY-MM-DD): ").strip()
+        date = datetime.strptime(date, "%Y-%m-%d").strftime("%Y-%m-%d")
+        description = input("Enter the description of the transaction to edit: ").strip()
+        with conn:
+            cursor.execute(
+                f"SELECT rowid, Date, Description, Amount FROM {selected_account} WHERE Date = ? AND Description = ?",
+                (date, description)
+            )
+            matches = cursor.fetchall()
+
+            if not matches:
+                print("No matching transaction found....")
+            else:
+                if len(matches) > 1:
+                    print(f"Found {len(matches)} matching transactions:")
+                    for i, m in enumerate(matches, start=1):
+                        print(f"{i}. Date: {m[1]}, Description: {m[2]}, Amount: {m[3]}")
+                    choice = input("Enter the number of the transaction to edit: ").strip()
+                    if not (choice.isdigit() and 1 <= int(choice) <= len(matches)):
+                        print("Invalid choice, cancelling edit....")
+                        function_menu(selected_account)
+                        return
+                    row = matches[int(choice) - 1]
+                else:
+                    row = matches[0]
+
+                row_id = row[0]
+                print(f"Editing: Date={row[1]}, Description={row[2]}, Amount={row[3]}")
+                new_date = input(f"New date (leave blank to keep '{row[1]}'): ").strip()
+                new_description = input(f"New description (leave blank to keep '{row[2]}'): ").strip()
+                new_amount = input(f"New amount (leave blank to keep '{row[3]}'): ").strip()
+
+                new_date = datetime.strptime(new_date, "%Y-%m-%d").strftime("%Y-%m-%d") if new_date else row[1]
+                new_description = new_description if new_description else row[2]
+                new_amount = float(new_amount) if new_amount else row[3]
+
+                cursor.execute(
+                    f"UPDATE {selected_account} SET Date = ?, Description = ?, Amount = ? WHERE rowid = ?",
+                    (new_date, new_description, new_amount, row_id)
+                )
+                print("Transaction updated...")
+        function_menu(selected_account)
+    elif response == 5:
         with conn:
             cursor.execute(f"SELECT * FROM {selected_account}")
             transactions = cursor.fetchall()
             df = pd.DataFrame(transactions, columns=['Date', 'Description', 'Amount'])
             df.sort_values(by='Date', inplace=True)
-            df.loc['Total'] = ['', '', df['Amount'].sum()]
             csv = f"{selected_account}_transactions.csv"
             df.to_csv(csv, index=False)
             print(f"Transactions exported to {csv}...")
         function_menu(selected_account)
-    elif response == 5:
+    elif response == 6:
         account_menu()
 
 if os.path.exists(db_name):
