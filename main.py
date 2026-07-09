@@ -61,7 +61,7 @@ def account_menu():
                 print("Account deleted...")
             except Exception as e:
                 print(f"Account does not exist, Enter a valid number....")
-                account_menu()
+        account_menu()
     elif response == 'q':
         print("Exiting...")
         exit()
@@ -81,6 +81,7 @@ def function_menu(selected_account):
         amount = float(input("Enter the amount: ").strip())
         with conn:
             cursor.execute(f"INSERT INTO {selected_account} (Date, Description, Amount) VALUES (?, ?, ?)", (date, description, amount))
+        function_menu(selected_account)
     elif response == 2:
         with conn:
             cursor.execute(f"SELECT * FROM {selected_account}")
@@ -89,6 +90,8 @@ def function_menu(selected_account):
             df.sort_values(by='Date', inplace=True)
             df.loc['Total'] = ['--------', 'Total Amount', df['Amount'].sum()]
             print(df)
+            
+            function_menu(selected_account)
     elif response == 3:
         date = input("Enter the date of the transaction to delete (YYYY-MM-DD): ").strip()
         description = input("Enter the description of the transaction to delete: ").strip()
@@ -116,6 +119,7 @@ def function_menu(selected_account):
                 else:
                     print("Invalid choice, cancelling delete....")
 
+        function_menu(selected_account)
     elif response == 4:
         account_menu()
 
