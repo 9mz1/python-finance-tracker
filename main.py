@@ -76,7 +76,7 @@ def account_menu():
 def function_menu(selected_account):
     print(f"-----ACCOUNT: {selected_account}-----")
     print("-----FUNCTION MENU-----")
-    response = int(input("Select a function: \n1. Add Transaction \n2. View Transactions \n3. Delete Transaction \n4. Back to Account Menu: ").strip())
+    response = int(input("Select a function: \n1. Add Transaction \n2. View Transactions \n3. Delete Transaction \n4. Export as CSV \n5. Back to Account Menu: ").strip())
     if response == 1:
         date = input("Enter the date (YYYY-MM-DD): ").strip()
         date = datetime.strptime(date, "%Y-%m-%d").strftime("%Y-%m-%d")
@@ -97,7 +97,7 @@ def function_menu(selected_account):
         
         if view_choice == '1':
             df_view = df.copy()
-            df_view.loc['Total'] = ['--------', 'Total Amount', df['Amount'].sum()]
+            df_view.loc['Total'] = ['--------', '--------', df['Amount'].sum()]
             print(df_view)
         elif view_choice == '2':
             year = input("Enter the year (YYYY): ").strip()
@@ -105,7 +105,7 @@ def function_menu(selected_account):
             if df_year.empty:
                 print(f"No transactions found for the year {year}.")
             else:
-                df_year.loc['Total'] = ['--------', 'Total Amount', df_year['Amount'].sum()]
+                df_year.loc['Total'] = ['--------', '--------', df_year['Amount'].sum()]
                 print(df_year)
         elif view_choice == '3':
             function_menu(selected_account)
@@ -144,6 +144,17 @@ def function_menu(selected_account):
 
         function_menu(selected_account)
     elif response == 4:
+        with conn:
+            cursor.execute(f"SELECT * FROM {selected_account}")
+            transactions = cursor.fetchall()
+            df = pd.DataFrame(transactions, columns=['Date', 'Description', 'Amount'])
+            df.sort_values(by='Date', inplace=True)
+            df.loc['Total'] = ['', '', df['Amount'].sum()]
+            csv = f"{selected_account}_transactions.csv"
+            df.to_csv(csv, index=False)
+            print(f"Transactions exported to {csv}...")
+        function_menu(selected_account)
+    elif response == 5:
         account_menu()
 
 if os.path.exists(db_name):
