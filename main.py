@@ -1,6 +1,7 @@
 import os
 import sqlite3
 import pandas as pd
+from datetime import datetime
 
 db_name = 'finance.db'
 
@@ -73,27 +74,49 @@ def account_menu():
         account_menu()
 
 def function_menu(selected_account):
+    print(f"-----ACCOUNT: {selected_account}-----")
     print("-----FUNCTION MENU-----")
     response = int(input("Select a function: \n1. Add Transaction \n2. View Transactions \n3. Delete Transaction \n4. Back to Account Menu: ").strip())
     if response == 1:
         date = input("Enter the date (YYYY-MM-DD): ").strip()
+        date = datetime.strptime(date, "%Y-%m-%d").strftime("%Y-%m-%d")
         description = input("Enter the description: ").strip()
         amount = float(input("Enter the amount: ").strip())
         with conn:
             cursor.execute(f"INSERT INTO {selected_account} (Date, Description, Amount) VALUES (?, ?, ?)", (date, description, amount))
         function_menu(selected_account)
     elif response == 2:
+        print('-----VIEW TRANSACTIONS-----')
+        view_choice = input("1. View all transactions \n2. View transactions by year \n3. Back to Function Menu: ").strip()
+
         with conn:
             cursor.execute(f"SELECT * FROM {selected_account}")
             transactions = cursor.fetchall()
             df = pd.DataFrame(transactions, columns=['Date', 'Description', 'Amount'])
             df.sort_values(by='Date', inplace=True)
-            df.loc['Total'] = ['--------', 'Total Amount', df['Amount'].sum()]
-            print(df)
-            
+        
+        if view_choice == '1':
+            df_view = df.copy()
+            df_view.loc['Total'] = ['--------', 'Total Amount', df['Amount'].sum()]
+            print(df_view)
+        elif view_choice == '2':
+            year = input("Enter the year (YYYY): ").strip()
+            df_year = df[df['Date'].str.startswith(year)]
+            if df_year.empty:
+                print(f"No transactions found for the year {year}.")
+            else:
+                df_year.loc['Total'] = ['--------', 'Total Amount', df_year['Amount'].sum()]
+                print(df_year)
+        elif view_choice == '3':
             function_menu(selected_account)
+            return
+        else:
+            print("Invalid choice, returning to Function Menu...")
+
+        function_menu(selected_account)
     elif response == 3:
         date = input("Enter the date of the transaction to delete (YYYY-MM-DD): ").strip()
+        date = datetime.strptime(date, "%Y-%m-%d").strftime("%Y-%m-%d")
         description = input("Enter the description of the transaction to delete: ").strip()
         with conn:
             cursor.execute(
