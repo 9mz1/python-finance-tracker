@@ -76,6 +76,7 @@ def account_menu():
 
 def function_menu(selected_account):
     print(f"-----ACCOUNT: {selected_account}-----")
+    show_monthly_summary(selected_account)
     print("-----FUNCTION MENU-----")
     response = int(input("Select a function: \n1. Add Transaction \n2. View Transactions \n3. Delete Transaction \n4. Edit Transaction \n5. Export as CSV \n6. Back to Account Menu: ").strip())
     if response == 1:
@@ -199,6 +200,27 @@ def function_menu(selected_account):
         function_menu(selected_account)
     elif response == 6:
         account_menu()
+
+def show_monthly_summary(selected_account):
+    with conn:
+        cursor.execute(f"SELECT Date, Amount FROM {selected_account}")
+        transactions = cursor.fetchall()
+
+    df = pd.DataFrame(transactions, columns=['Date', 'Amount'])
+    df = df[df['Date'] != '0001-01-01']  # exclude opening balance
+    df['Date'] = pd.to_datetime(df['Date'])
+
+    current_month = datetime.now().strftime('%Y-%m')
+    df_month = df[df['Date'].dt.strftime('%Y-%m') == current_month]
+
+    income = df_month[df_month['Amount'] > 0]['Amount'].sum()
+    spending = df_month[df_month['Amount'] < 0]['Amount'].sum()
+
+    with conn:
+        cursor.execute(f"SELECT SUM(Amount) FROM {selected_account}")
+        balance = cursor.fetchone()[0] or 0
+
+    print(f"\nThis month: +{income:.2f} income, {spending:.2f} spending | Current balance: {balance:.2f}\n")
 
 if os.path.exists(db_name):
     print('Database exists, connecting...\n')
