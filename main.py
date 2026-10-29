@@ -71,6 +71,10 @@ def edit_transaction(df, acc):
     df.to_csv(f"accounts/{acc}.csv", index=False)
     print("Transaction edited")
 
+def balance(df):
+    df = df.sort_values("Date").reset_index(drop=True)
+    return df["Amount"].sum()
+
 def main():
     accounts_list = []
 
@@ -116,7 +120,8 @@ def main():
 
 def account_func(acc):
     df = read_account(acc)
-    print(f"{acc.upper()} ACCOUNT FUNCTION MENU")
+    # print(f"{acc.upper()} ACCOUNT FUNCTION MENU")
+    print(f"Balance: {balance(df):.2f}")
     print("""
     1. Add Transaction
     2. Remove Transaction
