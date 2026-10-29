@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -43,7 +43,12 @@ def remove_transaction(df, acc):
     print("Transaction Removed")
 
 def view_transactions(df):
-    print(df)
+    if df.empty:
+        print("No transactions found.")
+        return
+    df = df.sort_values("Date").reset_index(drop=True)
+    total_row = pd.DataFrame({"Date": [""], "Description": ["TOTAL"], "Amount": [df["Amount"].sum()]})
+    print(pd.concat([df, total_row], ignore_index=True).to_string(index=False))
 
 def edit_transaction(df, acc):
     date = input("Enter Date Of Transaction To Edit (YYYY-MM-DD): ")
