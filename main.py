@@ -22,7 +22,7 @@ def read_account(acc):
     return df
 
 def add_transaction(df, acc):
-    date = input("Enter Date (YYYY-MM-DD) or leave empty for current date: ")
+    date = input("Enter Date (YYYY-MM-DD) Or Leave Empty For Current Date: ")
     if not date:
         date = datetime.now().strftime("%Y-%m-%d")
     description = input("Enter Description: ")
@@ -34,18 +34,37 @@ def add_transaction(df, acc):
     # return df
 
 def remove_transaction(df, acc):
-    date = input("Enter Date (YYYY-MM-DD) or leave empty for current date: ")
+    date = input("Enter Date (YYYY-MM-DD) Or Leave Empty For Current Date: ")
     if not date:
         date = datetime.now().strftime("%Y-%m-%d")
     description = input("Enter Description: ")
     df = df[~((df["Date"] == date) & (df["Description"] == description))]
     df.to_csv(f"accounts/{acc}.csv", index=False)
+    print("Transaction Removed")
 
 def view_transactions(df):
-    pass
+    print(df)
 
-def edit_transaction(df):
-    pass
+def edit_transaction(df, acc):
+    date = input("Enter Date Of Transaction To Edit (YYYY-MM-DD): ")
+    if not date:
+        date = datetime.now().strftime("%Y-%m-%d")
+    description = input("Enter Description Of Transaction To Edit: ")
+    amount = float(input("Enter Amount Of Transaction To Edit: "))
+
+    mask = (df["Date"] == date) & (df["Description"] == description) & (df["Amount"] == amount)
+    if not mask.any():
+        print("Transaction not found.")
+        return
+
+    new_date = input("Enter New Date (YYYY-MM-DD) Or Leave Empty To Keep Current: ") or date
+    new_description = input("Enter New Description Or Leave Empty To Keep Current: ") or description
+    new_amount_str = input("Enter New Amount Or Leave Empty To Keep Current: ")
+    new_amount = float(new_amount_str) if new_amount_str else amount
+
+    df.loc[mask, ["Date", "Description", "Amount"]] = [new_date, new_description, new_amount]
+    df.to_csv(f"accounts/{acc}.csv", index=False)
+    print("Transaction edited")
 
 def main():
     accounts_list = []
@@ -109,7 +128,7 @@ def account_func(acc):
     elif inp == "3":
         view_transactions(df)
     elif inp == "4":
-        edit_transaction(df)
+        edit_transaction(df, acc)
     elif inp == "5":
         main()
     else:
