@@ -119,30 +119,30 @@ def main():
     print(accounts_list)
 
 def account_func(acc):
-    df = read_account(acc)
-    # print(f"{acc.upper()} ACCOUNT FUNCTION MENU")
-    print(f"Balance: {balance(df):.2f}")
-    print("""
-    1. Add Transaction
-    2. Remove Transaction
-    3. View Transactions
-    4. Edit Transaction
-    5. Back to Account Menu
-    \n""")
-    inp = input("Enter your choice (1-5): ").lower()
+    while True:
+        df = read_account(acc)
+        print(f"Balance: {balance(df):.2f}")
+        print("""
+        1. Add Transaction
+        2. Remove Transaction
+        3. View Transactions
+        4. Edit Transaction
+        5. Back to Account Menu
+        \n""")
+        inp = input("Enter your choice (1-5): ").lower()
 
-    if inp == "1":
-        add_transaction(df, acc)
-    elif inp == "2":
-        remove_transaction(df, acc)
-    elif inp == "3":
-        view_transactions(df)
-    elif inp == "4":
-        edit_transaction(df, acc)
-    elif inp == "5":
-        main()
-    else:
-        print("Invalid choice")
+        if inp == "1":
+            add_transaction(df, acc)
+        elif inp == "2":
+            remove_transaction(df, acc)
+        elif inp == "3":
+            view_transactions(df)
+        elif inp == "4":
+            edit_transaction(df, acc)
+        elif inp == "5":
+            return
+        else:
+            print("Invalid choice")
 
 while True:
     main()
